@@ -1,0 +1,19 @@
+{
+    "name": "@agents/eslint",
+    "private": true,
+    "type": "module",
+    "prettier": "@agents/prettier",
+    "devDependencies": {
+        "@agents/prettier": "workspace:*",
+        "@eslint/js": "catalog:",
+        "eslint": "catalog:",
+        "eslint-config-prettier": "catalog:",
+        "eslint-plugin-turbo": "catalog:",
+        "eslint-plugin-unicorn": "catalog:",
+        "globals": "catalog:",
+        "typescript-eslint": "catalog:"
+    },
+    "exports": {
+        "./base": "./base.mjs"
+    }
+}

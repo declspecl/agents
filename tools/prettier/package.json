@@ -1,0 +1,13 @@
+{
+    "name": "@agents/prettier",
+    "private": true,
+    "type": "module",
+    "prettier": "@agents/prettier",
+    "devDependencies": {
+        "@trivago/prettier-plugin-sort-imports": "catalog:",
+        "prettier": "catalog:"
+    },
+    "exports": {
+        ".": "./prettier.config.mjs"
+    }
+}

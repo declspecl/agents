@@ -1,0 +1,12 @@
+{
+    "name": "@agents/typescript",
+    "private": true,
+    "type": "module",
+    "files": [
+        "*.json"
+    ],
+    "prettier": "@agents/prettier",
+    "devDependencies": {
+        "@agents/prettier": "workspace:*"
+    }
+}

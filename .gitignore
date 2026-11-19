@@ -1,0 +1,23 @@
+node_modules/
+.pnpm-store/
+*-debug.log*
+
+# Secrets. Committed examples stay visible.
+.env*
+!.env.example
+*.pem
+
+# Outputs
+/dist/
+/apps/*/dist/
+/tools/*/dist/
+/apps/api/target/
+.turbo/
+.cache/
+cdk.out/
+cdk.context.json
+*.tsbuildinfo
+coverage/
+
+.data/
+.DS_Store

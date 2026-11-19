@@ -1,0 +1,36 @@
+{
+    "name": "agents",
+    "private": true,
+    "scripts": {
+        "build": "turbo run build",
+        "dev": "turbo run dev",
+        "lint": "turbo run lint",
+        "lint:check": "turbo run lint:check",
+        "prettier": "turbo run prettier",
+        "prettier:check": "prettier --check \"*.{json,mjs,mts,ts,yaml,yml,md}\" \".github/**/*.{yml,yaml}\" \"{apps,tools}/**/*.{ts,mts,mjs,json,yaml,yml,md}\"",
+        "check-types": "turbo run check-types",
+        "test": "turbo run test",
+        "clean": "rm -rf .turbo .cache && turbo run clean",
+        "fullclean": "rm -rf .turbo .cache node_modules && turbo run fullclean",
+        "prepare": "husky",
+        "api:dev": "pnpm --filter @agents/api run dev",
+        "cdk:bootstrap": "pnpm --filter @agents/cdk run bootstrap",
+        "cdk:synth": "pnpm --filter @agents/cdk run synth",
+        "cdk:diff": "pnpm --filter @agents/cdk run diff",
+        "cdk:deploy": "pnpm --filter @agents/cdk run deploy"
+    },
+    "prettier": "@agents/prettier",
+    "devDependencies": {
+        "@agents/prettier": "workspace:*",
+        "eslint": "catalog:",
+        "husky": "catalog:",
+        "lint-staged": "catalog:",
+        "prettier": "catalog:",
+        "turbo": "catalog:",
+        "typescript": "catalog:"
+    },
+    "packageManager": "pnpm@12.4.1",
+    "engines": {
+        "node": ">=24"
+    }
+}
