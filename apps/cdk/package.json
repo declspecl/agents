@@ -19,7 +19,8 @@
     "prettier": "@agents/prettier",
     "dependencies": {
         "aws-cdk-lib": "catalog:",
-        "constructs": "catalog:"
+        "constructs": "catalog:",
+        "zod": "catalog:"
     },
     "devDependencies": {
         "@agents/eslint": "workspace:*",

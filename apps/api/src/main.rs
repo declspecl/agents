@@ -1,24 +1,27 @@
-use lambda_http::{
-    Error,
-    run,
-    tracing,
-};
+use std::process::ExitCode;
 
-mod routes;
+use api::environment::Environment;
+use api::server;
+use lambda_http::tracing;
 
 #[tokio::main]
-async fn main() -> Result<(), Error> {
+async fn main() -> ExitCode {
     tracing::init_default_subscriber();
 
-    if std::env::var_os("AWS_LAMBDA_RUNTIME_API").is_some() {
-        run(routes::router()).await
-    } else {
-        let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await?;
+    let environment = match Environment::read() {
+        Ok(environment) => environment,
+        Err(error) => {
+            eprintln!("{error}");
 
-        println!("listening on http://localhost:3000");
+            return ExitCode::FAILURE;
+        },
+    };
 
-        axum::serve(listener, routes::router()).await?;
-
-        Ok(())
+    match server::serve(environment).await {
+        Ok(()) => ExitCode::SUCCESS,
+        Err(error) => {
+            eprintln!("{error}");
+            ExitCode::FAILURE
+        },
     }
 }

@@ -1,0 +1,6 @@
+export enum AwsRegion {
+    US_EAST_1 = "us-east-1",
+    US_EAST_2 = "us-east-2",
+    US_WEST_2 = "us-west-2",
+    EU_CENTRAL_1 = "eu-central-1",
+}
