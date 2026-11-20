@@ -1,3 +1,4 @@
+import { LAMBDA_ENVIRONMENT_VARIABLE } from "../environment/lambda-variables";
 import type { Stage } from "../model/stage";
 import { RustLambda } from "./rust-lambda";
 import { CfnOutput } from "aws-cdk-lib";
@@ -37,7 +38,10 @@ export class Api extends Construct {
         this.apiFunction = new RustLambda(this, "ApiFunction", {
             functionName: `agents-${props.stage}-api`,
             crate: "api",
-            environment: { TZ: ":UTC" },
+            environment: {
+                TZ: ":UTC",
+                [LAMBDA_ENVIRONMENT_VARIABLE.publicBaseUrl]: `https://${props.domainName}`,
+            },
         });
 
         this.api.addRoutes({

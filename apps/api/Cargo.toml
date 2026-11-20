@@ -20,10 +20,15 @@ unimplemented = "deny"
 debug = 1
 
 [dependencies]
+anyhow = "1.0.104"
+askama = "0.16.1"
 axum = { version = "0.8.9", features = ["tokio", "http1"] }
+include_dir = "0.7.4"
 lambda_http = "1.3.2"
 serde = { version = "1.0.229", features = ["derive"] }
+thiserror = "2.0.21"
 tokio = { version = "1.54.1", features = ["macros", "rt-multi-thread"] }
+toml = "1.2.1"
 
 [dev-dependencies]
 http-body-util = "0.1.5"

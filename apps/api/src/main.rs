@@ -1,27 +1,15 @@
-use std::process::ExitCode;
-
+use anyhow::Context;
+use api::content::Catalog;
 use api::environment::Environment;
 use api::server;
 use lambda_http::tracing;
 
 #[tokio::main]
-async fn main() -> ExitCode {
+async fn main() -> anyhow::Result<()> {
     tracing::init_default_subscriber();
 
-    let environment = match Environment::read() {
-        Ok(environment) => environment,
-        Err(error) => {
-            eprintln!("{error}");
+    let environment = Environment::read().context("could not read the environment")?;
+    let catalog = Catalog::load_embedded().context("could not load the embedded content")?;
 
-            return ExitCode::FAILURE;
-        },
-    };
-
-    match server::serve(environment).await {
-        Ok(()) => ExitCode::SUCCESS,
-        Err(error) => {
-            eprintln!("{error}");
-            ExitCode::FAILURE
-        },
-    }
+    server::serve(environment, catalog).await
 }

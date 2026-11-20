@@ -12,19 +12,20 @@ the main decisions were made.
 
 ## Status
 
-| Piece                                                                         | State                              |
-| ----------------------------------------------------------------------------- | ---------------------------------- |
-| Monorepo, tooling, CI, CDK stack, Docker-built Rust Lambda, custom domain     | Built                              |
-| Typed environment reading (Rust and CDK)                                      | Built                              |
-| `GET /health`                                                                 | Built                              |
-| Content tree, `llms.txt`, `llms-full.txt`, `sitemap.xml`, `robots.txt`, paths | **Planned**: see `docs/CONTENT.md` |
-| Real content (preferences, setup)                                             | **Planned**                        |
+| Piece                                                                                  | State                              |
+| -------------------------------------------------------------------------------------- | ---------------------------------- |
+| Monorepo, tooling, CI, CDK stack, Docker-built Rust Lambda, custom domain              | Built                              |
+| Typed environment reading (Rust and CDK), including `PUBLIC_BASE_URL`                  | Built                              |
+| Embedded content tree, file-based routing, directory listings, 404s                    | Built                              |
+| `GET /health`, `/llms.txt`, `/llms-full.txt`, `/sitemap.xml`, `/robots.txt`            | Built                              |
+| Baseline content (`about`, `preferences/code-style`, `setup/tooling`)                  | Built; grow it over time           |
+| `ETag` and `Cache-Control`, JSON via `Accept`, optional front matter, directory intros | **Planned**: see `docs/CONTENT.md` |
 
 Do not describe planned pieces as existing. When one ships, update this table and `docs/CONTENT.md` in the same change.
 
 ## Glossary
 
-**Content**: the markdown documents the API serves. They live in `content/` in this repo (planned) and describe
+**Content**: the markdown documents the API serves. They live in `apps/api/content/` in this repo and describe
 Gavin's setup and preferences.
 _Avoid_: data, files (a file is a source on disk; see _Document_)
 
@@ -49,19 +50,24 @@ tools/eslint           shared ESLint config
 tools/prettier         shared Prettier config
 tools/typescript       shared tsconfig bases
 docs/                  CONTENT.md and adr/
-content/               the markdown the API serves (planned; does not exist yet)
 ```
 
 `apps/api` layout:
 
 ```
-src/main.rs            thin entrypoint: tracing, read environment, serve, exit code
+src/main.rs            thin entrypoint: tracing, read environment, load content, serve
 src/lib.rs             module map
 src/server.rs          serve(): Lambda or local HTTP depending on Runtime
+src/state.rs           AppState: the catalog and base URL every handler shares
+src/content.rs         Catalog, Document, typed DocumentPath and DirectoryPath; parses embedded content
+src/views.rs           generated outputs as Askama templates (llms.txt, sitemap, listings, 404)
 src/environment.rs     Environment, Runtime; reads the process environment once at startup
 src/environment/       Variable (names and docs), EnvironmentError, Reader (private)
-src/routes.rs          build_router(): registers every endpoint
-src/routes/            one endpoint per file
+src/routes.rs          build_router(): the fixed endpoints plus one catch-all for content
+src/routes/            one endpoint per file; content.rs serves every document and directory
+content/               the markdown the API serves. The directory tree is the URL tree
+templates/             Askama templates for the generated outputs
+build.rs               rebuilds when content/ or templates/ change
 tests/                 integration tests of the public API; unit tests live in sibling files, not inline
 ```
 
@@ -93,6 +99,13 @@ The word **environment** means the process's variables and the typed model read 
 reads `std::env` or `process.env` anywhere else. Values are parsed once at startup into types (a `SocketAddr`, a branded
 `AwsAccountId`), every bad variable is reported together, and a blank value counts as unset. Reading takes a lookup
 function so tests never touch process state.
+
+**Adding content.** Add a markdown file under `apps/api/content/`. That is all: it is served at its path, listed in its
+directory, `llms.txt`, `llms-full.txt` and `sitemap.xml`, with no route, template or registry entry to add. See
+[`docs/CONTENT.md`](docs/CONTENT.md) for the file format.
+
+**Errors.** Library errors are typed with `thiserror` (callers and tests match on them); the binary side uses `anyhow`
+with context. Validation reports every problem together.
 
 **Rust.**
 

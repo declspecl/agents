@@ -1,7 +1,7 @@
 # Content and the virtual filesystem
 
-> **Status: design. Nothing in this document is implemented yet** except `GET /health`. Update this file as each piece
-> ships, and mark what is built.
+> **Status:** the endpoints, file-based routing and baseline content below are built. Items marked _Planned_ are not.
+> Update this file as each piece ships.
 
 ## Purpose
 
@@ -31,22 +31,40 @@ knowledge.
 ## Rules
 
 - **Markdown by default.** A document is returned as `text/markdown; charset=utf-8`. JSON is available through the
-  `Accept` header for anything programmatic. (Planned.)
+  `Accept` header for anything programmatic. _Planned._
 - **Directories end in `/`.** A request for a directory without the slash redirects to the slash form.
 - **Generated, not hand-written, indexes.** `llms.txt`, `llms-full.txt`, `sitemap.xml` and every directory listing are
   built from the content tree, so they cannot drift from it.
-- **Cacheable.** Content only changes on deploy, so responses carry `ETag` and long-lived `Cache-Control`, and the API
-  answers conditional requests with 304.
+- **Cacheable.** _Planned._ Content only changes on deploy, so responses will carry `ETag` and long-lived
+  `Cache-Control`, and the API will answer conditional requests with 304.
 - **Read-only.** Only `GET` and `HEAD`. Anything else is 405.
 - **Unknown paths are 404** with a short markdown body that links back to `/llms.txt`, so a lost agent can recover.
 - **No state.** No database, sessions or cookies. Two requests for the same path return the same bytes until a deploy.
 
 ## Content
 
-Content is markdown in `content/`, in this repo, embedded into the binary at build time
-([ADR 0002](adr/0002-content-embedded-from-the-repo.md)). The directory tree under `content/` is the URL tree.
-Each document may start with front matter (title, one-line summary) which the generated indexes use as link text and
-descriptions. Editing content is an ordinary pull request; it ships on deploy.
+Content is markdown in `apps/api/content/`, embedded into the binary at build time
+([ADR 0002](adr/0002-content-embedded-from-the-repo.md)), so nothing is read from disk at runtime. **The directory tree
+under `content/` is the URL tree.** To add a document, add a file; there is no route, template or registry to edit.
+Nested directories work to any depth: `content/languages/rust/ownership.md` is served at
+`/languages/rust/ownership.md` and `/languages/rust/` lists it.
+
+A source file is TOML front matter between `+++` fences, then markdown that starts with a level-one heading:
+
+```markdown
++++
+title = "Code style"
+summary = "Naming, structure and formatting preferences."
++++
+
+# Code style
+
+...
+```
+
+`title` and `summary` are required and become the link text and description in `llms.txt` and the listings. File and
+directory names are lowercase letters, digits and single hyphens, and documents end in `.md`. A malformed or misnamed
+file fails startup and the test suite, listing every problem, so it never reaches a request.
 
 All content is public ([ADR 0003](adr/0003-all-content-is-public.md)). **Never put a secret, token, private address or
 anything personal that should not be world-readable in `content/`.** `robots.txt` is a request to well-behaved
@@ -54,7 +72,9 @@ crawlers, not access control.
 
 ## Open decisions
 
-- Front matter format and the exact fields.
+- Whether front matter should become optional, deriving the title from the first heading and the summary from the first
+  paragraph.
+- Whether a directory may have an intro document that its listing shows.
 - Whether `/llms-full.txt` includes every document or only a curated set.
 - Whether to add an MCP interface over the same content for agents that prefer tool calls to crawling.
 - The initial content outline.

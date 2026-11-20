@@ -1,30 +1,19 @@
-use std::fmt;
+use thiserror::Error;
 
 use super::Variable;
+use crate::problem_list::format_problems;
 
-#[derive(Debug, PartialEq, Eq)]
+/// One variable that could not be used, and why.
+#[derive(Debug, PartialEq, Eq, Error)]
+#[error("{variable}: {message}")]
 pub struct Problem {
     pub variable: Variable,
     pub message: String,
 }
 
-#[derive(Debug, PartialEq, Eq)]
+/// Every problem found while reading the environment. Never empty.
+#[derive(Debug, PartialEq, Eq, Error)]
+#[error("invalid environment:{}", format_problems(.problems))]
 pub struct EnvironmentError {
     pub problems: Vec<Problem>,
 }
-
-impl fmt::Display for EnvironmentError {
-    fn fmt(
-        &self,
-        f: &mut fmt::Formatter<'_>,
-    ) -> fmt::Result {
-        write!(f, "invalid environment:")?;
-        for problem in &self.problems {
-            write!(f, "\n  {}: {}", problem.variable, problem.message)?;
-        }
-
-        Ok(())
-    }
-}
-
-impl std::error::Error for EnvironmentError {}

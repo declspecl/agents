@@ -7,6 +7,7 @@ use super::{
     Variable,
 };
 
+/// Reads variables from a lookup, remembering each failure so they can all be reported together.
 pub(super) struct Reader<L> {
     lookup: L,
     problems: Vec<Problem>,
@@ -20,6 +21,7 @@ impl<L: Fn(&str) -> Option<String>> Reader<L> {
         }
     }
 
+    /// The parsed value, or `None` when the variable is unset, blank, or invalid. An invalid value is recorded.
     pub(super) fn read_optional<T: FromStr>(
         &mut self,
         variable: Variable,
@@ -45,6 +47,27 @@ impl<L: Fn(&str) -> Option<String>> Reader<L> {
         }
     }
 
+    /// Like [`Reader::read_optional`], and a missing value is recorded as a problem too.
+    pub(super) fn read_required<T: FromStr>(
+        &mut self,
+        variable: Variable,
+    ) -> Option<T>
+    where
+        T::Err: fmt::Display,
+    {
+        let before = self.problems.len();
+        let value = self.read_optional(variable);
+        if value.is_none() && self.problems.len() == before {
+            self.problems.push(Problem {
+                variable,
+                message: "is required".to_owned(),
+            });
+        }
+
+        value
+    }
+
+    /// Fails with every recorded problem, or succeeds when there were none.
     pub(super) fn finish(self) -> Result<(), EnvironmentError> {
         if self.problems.is_empty() {
             Ok(())

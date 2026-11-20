@@ -4,3 +4,4 @@ cdk.out
 dist
 .turbo
 .cache
+apps/api/templates

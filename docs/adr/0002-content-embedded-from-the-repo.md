@@ -4,7 +4,7 @@ status: accepted
 
 # Content lives in the repo and is embedded at build time
 
-The markdown the API serves is kept in `content/` and compiled into the binary, not read from S3 at request time.
+The markdown the API serves is kept in `apps/api/content/` and compiled into the binary (`include_dir!`), not read from S3 at request time.
 Content is small, changes slowly, and benefits from review and history, so git is the right store. Embedding means no
 AWS permissions, no read latency, no cold-start network call and no failure mode where content is missing.
 
