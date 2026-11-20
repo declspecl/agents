@@ -1,21 +1,20 @@
 # agents
 
-Rust REST API Lambda served at `agents.gavindhondt.com`, deployed with AWS CDK. Turborepo + pnpm monorepo.
+A public website at `agents.gavindhondt.com` that any AI agent can be pointed at to learn about Gavin's setup and
+preferences. A stateless Rust REST API on AWS Lambda presents markdown as a virtual filesystem, using `llms.txt`,
+`sitemap.xml` and `robots.txt`.
 
-| Path       | What                                                                              |
-| ---------- | --------------------------------------------------------------------------------- |
-| `apps/api` | Rust (axum + `lambda_http`) Lambda, built by Docker into an ARM64 container image |
-| `apps/cdk` | CDK app: Lambda, HTTP API, ACM cert, custom domain, Route 53 alias                |
-| `tools/*`  | Shared prettier, tsconfig and eslint config                                       |
+**Start with [`AGENTS.md`](AGENTS.md)**: purpose, status, layout, commands and conventions. The content design is in
+[`docs/CONTENT.md`](docs/CONTENT.md) and the decisions are in [`docs/adr/`](docs/adr/).
 
-## Setup
+## Quick start
 
-Requires Node 24, pnpm and Docker. Deploys build the Rust image in Docker, so no Rust toolchain, cargo-lambda or zig is needed to deploy. Rust is only needed for local `cargo` dev.
+Requires Node 24 (`mise install`), pnpm, Docker and Rust.
 
 ```sh
 pnpm install
+pnpm api:dev                             # http://127.0.0.1:3000
 cp apps/cdk/.env.example apps/cdk/.env   # fill in AWS_ACCOUNT_ID
-pnpm api:dev                             # serves http://localhost:3000 (cargo run)
 pnpm cdk:bootstrap && pnpm cdk:deploy
 ```
 
