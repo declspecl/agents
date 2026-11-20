@@ -5,7 +5,7 @@
 export const ENVIRONMENT_VARIABLE = {
     /** The twelve-digit account to deploy into. Required: the hosted-zone lookup needs a concrete account at synth time. */
     awsAccountId: "AWS_ACCOUNT_ID",
-    /** The region to deploy into. Defaults to us-east-1. */
+    /** The region to deploy into. Only us-east-1 is allowed, because CloudFront needs its certificate there. */
     awsRegion: "AWS_REGION",
     /** The deployment stage. Only prod exists, so it defaults to prod. */
     deploymentStage: "DEPLOYMENT_STAGE",

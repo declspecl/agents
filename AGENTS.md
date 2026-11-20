@@ -20,6 +20,7 @@ the main decisions were made.
 | `GET /health`, `/llms.txt`, `/llms-full.txt`, `/sitemap.xml`, `/robots.txt`   | Built                              |
 | Baseline content (`about`, `preferences/code-style`, `setup/tooling`)         | Built; grow it over time           |
 | `Cache-Control`, `ETag` and 304s on every response                            | Built                              |
+| CloudFront: HTTP to HTTPS redirect, edge caching, HTTP/3, IPv6, HSTS          | Built                              |
 | JSON via `Accept`, optional front matter, directory intros                    | **Planned**: see `docs/CONTENT.md` |
 
 Do not describe planned pieces as existing. When one ships, update this table and `docs/CONTENT.md` in the same change.
@@ -46,7 +47,7 @@ _Avoid_: user, visitor, crawler (a crawler is one kind of agent)
 
 ```
 apps/api               Rust (axum + lambda_http) Lambda. Library crate plus a thin binary
-apps/cdk               AWS CDK app: the Lambda zip, HTTP API, certificate, domain, DNS
+apps/cdk               AWS CDK app: the Lambda and HTTP API, and the CloudFront distribution, certificate and DNS that serve them
 tools/eslint           shared ESLint config
 tools/prettier         shared Prettier config
 tools/typescript       shared tsconfig bases
@@ -135,8 +136,15 @@ nightly), so a deploy needs Docker and nothing else: no Rust cross-compilation t
 name blocks any change that replaces the function. CI runs on GitHub Actions (`.github/workflows/ci.yml`); a pre-commit
 hook runs Prettier on staged files.
 
+**CloudFront.** The public hostname is a CloudFront distribution (`apps/cdk/src/constructs/site-distribution.ts`), not
+an API Gateway custom domain; it fetches from the API's default endpoint. It redirects HTTP to HTTPS, serves HTTP/2 and
+HTTP/3 over IPv4 and IPv6, compresses, and sends HSTS. The stack is pinned to `us-east-1`, since CloudFront needs its
+certificate there. See [ADR 0007](docs/adr/0007-cloudfront-in-front.md).
+
 **Caching.** Every successful response carries `Cache-Control: public, max-age=300` and a strong `ETag` (a hash of the
-body), and a matching `If-None-Match` gets a bodyless 304. Failures and `/health` are `no-store`. One middleware
+body), and a matching `If-None-Match` gets a bodyless 304. Failures and `/health` are `no-store`. CloudFront obeys
+the same header, so a hit is served from the edge and never reaches the Lambda; a deploy shows up within the five
+minutes, with no invalidation step. One middleware
 (`routes/caching.rs`) does this for every endpoint, so a new route gets it without any code.
 
 ## Decisions
@@ -149,3 +157,4 @@ body), and a matching `If-None-Match` gets a bodyless 304. Failures and `/health
 | [0004](docs/adr/0004-container-image-lambda.md)            | Superseded: the Lambda deployed as a Docker container image                |
 | [0005](docs/adr/0005-pinned-nightly-rust.md)               | Rust is nightly, pinned by date                                            |
 | [0006](docs/adr/0006-zip-lambda-built-in-docker.md)        | The Lambda is a plain-binary zip, compiled in Docker by CDK bundling       |
+| [0007](docs/adr/0007-cloudfront-in-front.md)               | CloudFront serves the domain, redirects HTTP, and caches at the edge       |

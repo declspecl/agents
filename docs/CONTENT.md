@@ -38,7 +38,7 @@ knowledge.
   built from the content tree, so they cannot drift from it.
 - **Cacheable.** Content only changes on deploy, so every successful response carries a five-minute `Cache-Control` and a
   strong `ETag` (a hash of its body). A request whose `If-None-Match` still matches gets a bodyless 304. Failures and
-  `/health` are `no-store`.
+  `/health` are `no-store`. CloudFront obeys the same header, so cached responses are served from the edge.
 - **Read-only.** Only `GET` and `HEAD`. Anything else is 405.
 - **Unknown paths are 404** with a short markdown body that links back to `/llms.txt`, so a lost agent can recover.
 - **No state.** No database, sessions or cookies. Two requests for the same path return the same bytes until a deploy.
