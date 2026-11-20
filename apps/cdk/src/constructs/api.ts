@@ -36,8 +36,10 @@ export class Api extends Construct {
         });
 
         this.apiFunction = new RustLambda(this, "ApiFunction", {
-            functionName: `agents-${props.stage}-api`,
             crate: "api",
+            binary: "api",
+            // Kept at the name the first deploy gave it: renaming a named log group replaces it, which CloudFormation refuses.
+            logGroupName: `/aws/lambda/agents-${props.stage}-api`,
             environment: {
                 TZ: ":UTC",
                 [LAMBDA_ENVIRONMENT_VARIABLE.publicBaseUrl]: `https://${props.domainName}`,

@@ -12,14 +12,15 @@ the main decisions were made.
 
 ## Status
 
-| Piece                                                                                  | State                              |
-| -------------------------------------------------------------------------------------- | ---------------------------------- |
-| Monorepo, tooling, CI, CDK stack, Docker-built Rust Lambda, custom domain              | Built                              |
-| Typed environment reading (Rust and CDK), including `PUBLIC_BASE_URL`                  | Built                              |
-| Embedded content tree, file-based routing, directory listings, 404s                    | Built                              |
-| `GET /health`, `/llms.txt`, `/llms-full.txt`, `/sitemap.xml`, `/robots.txt`            | Built                              |
-| Baseline content (`about`, `preferences/code-style`, `setup/tooling`)                  | Built; grow it over time           |
-| `ETag` and `Cache-Control`, JSON via `Accept`, optional front matter, directory intros | **Planned**: see `docs/CONTENT.md` |
+| Piece                                                                         | State                              |
+| ----------------------------------------------------------------------------- | ---------------------------------- |
+| Monorepo, tooling, CI, CDK stack, Docker-built Rust Lambda zip, custom domain | Built                              |
+| Typed environment reading (Rust and CDK), including `PUBLIC_BASE_URL`         | Built                              |
+| Embedded content tree, file-based routing, directory listings, 404s           | Built                              |
+| `GET /health`, `/llms.txt`, `/llms-full.txt`, `/sitemap.xml`, `/robots.txt`   | Built                              |
+| Baseline content (`about`, `preferences/code-style`, `setup/tooling`)         | Built; grow it over time           |
+| `Cache-Control`, `ETag` and 304s on every response                            | Built                              |
+| JSON via `Accept`, optional front matter, directory intros                    | **Planned**: see `docs/CONTENT.md` |
 
 Do not describe planned pieces as existing. When one ships, update this table and `docs/CONTENT.md` in the same change.
 
@@ -45,7 +46,7 @@ _Avoid_: user, visitor, crawler (a crawler is one kind of agent)
 
 ```
 apps/api               Rust (axum + lambda_http) Lambda. Library crate plus a thin binary
-apps/cdk               AWS CDK app: the Lambda container image, HTTP API, certificate, domain, DNS
+apps/cdk               AWS CDK app: the Lambda zip, HTTP API, certificate, domain, DNS
 tools/eslint           shared ESLint config
 tools/prettier         shared Prettier config
 tools/typescript       shared tsconfig bases
@@ -85,7 +86,7 @@ pnpm prettier:check    # formatting
 pnpm cdk:synth | cdk:diff | cdk:deploy | cdk:bootstrap
 ```
 
-Deploys need `apps/cdk/.env` (copy `.env.example`; `AWS_ACCOUNT_ID` is required). The `gavindhondt.com` hosted zone
+Deploys need `apps/cdk/.env.local` (copy `.env.example`; `AWS_ACCOUNT_ID` is required). The `gavindhondt.com` hosted zone
 must exist in Route 53 in that account.
 
 ## Conventions
@@ -110,7 +111,7 @@ with context. Validation reports every problem together.
 **Rust.**
 
 - Nightly, pinned by date in `apps/api/rust-toolchain.toml`. `rustfmt.toml` uses nightly-only options. Bump the date
-  deliberately; the Docker build reads the same file.
+  deliberately; the builder image reads the same file.
 - `unsafe_code` is forbidden. `unwrap`, `expect`, `panic`, `unreachable`, `todo` and `unimplemented` are denied outside
   tests (`clippy.toml` allows them in tests). Return errors.
 - Library plus thin binary, so `tests/` exercises the public API. Tests live in `tests/` or in sibling test files, never
@@ -127,10 +128,16 @@ doc in the same change. A decision that bends a rule here gets an ADR.
 
 ## Deployment
 
-The Lambda is an **ARM64 container image**: Docker compiles the Rust crate (`apps/api/Dockerfile`) and CDK builds and
-pushes it during `cdk deploy`. No native Rust cross-compilation toolchain, `cargo-lambda` or zig is needed. See
-[ADR 0004](docs/adr/0004-container-image-lambda.md). CI runs on GitHub Actions (`.github/workflows/ci.yml`); a pre-commit
+The Lambda is a **plain `bootstrap` binary in a zip**, on `provided.al2023` ARM64 with the minimum 128 MB of memory and a
+3-second timeout. CDK's asset bundling compiles it inside `apps/api/builder.Dockerfile` (Amazon Linux 2023, the pinned
+nightly), so a deploy needs Docker and nothing else: no Rust cross-compilation toolchain, `cargo-lambda` or zig. See
+[ADR 0006](docs/adr/0006-zip-lambda-built-in-docker.md). The function name is left to CloudFormation, since a hard-coded
+name blocks any change that replaces the function. CI runs on GitHub Actions (`.github/workflows/ci.yml`); a pre-commit
 hook runs Prettier on staged files.
+
+**Caching.** Every successful response carries `Cache-Control: public, max-age=300` and a strong `ETag` (a hash of the
+body), and a matching `If-None-Match` gets a bodyless 304. Failures and `/health` are `no-store`. One middleware
+(`routes/caching.rs`) does this for every endpoint, so a new route gets it without any code.
 
 ## Decisions
 
@@ -139,5 +146,6 @@ hook runs Prettier on staged files.
 | [0001](docs/adr/0001-agent-readable-virtual-filesystem.md) | The site is a virtual filesystem for agents, built on llms.txt and friends |
 | [0002](docs/adr/0002-content-embedded-from-the-repo.md)    | Content lives in the repo and is embedded at build time, not read from S3  |
 | [0003](docs/adr/0003-all-content-is-public.md)             | All content is public; there is no auth and no private tree                |
-| [0004](docs/adr/0004-container-image-lambda.md)            | The Lambda deploys as a Docker container image                             |
+| [0004](docs/adr/0004-container-image-lambda.md)            | Superseded: the Lambda deployed as a Docker container image                |
 | [0005](docs/adr/0005-pinned-nightly-rust.md)               | Rust is nightly, pinned by date                                            |
+| [0006](docs/adr/0006-zip-lambda-built-in-docker.md)        | The Lambda is a plain-binary zip, compiled in Docker by CDK bundling       |

@@ -1,5 +1,6 @@
 //! The HTTP surface. Each endpoint lives in its own module and registers itself here.
 
+mod caching;
 mod content;
 mod health;
 mod llms_full_txt;
@@ -8,8 +9,11 @@ mod response;
 mod robots_txt;
 mod sitemap_xml;
 
-use axum::Router;
 use axum::routing::get;
+use axum::{
+    Router,
+    middleware,
+};
 
 use crate::state::AppState;
 
@@ -22,5 +26,6 @@ pub fn build_router(state: AppState) -> Router {
         .route("/robots.txt", get(robots_txt::serve_robots_txt))
         .route("/", get(content::serve_root))
         .route("/{*path}", get(content::serve_path))
+        .layer(middleware::from_fn(caching::add_caching))
         .with_state(state)
 }

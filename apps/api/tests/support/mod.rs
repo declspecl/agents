@@ -60,6 +60,8 @@ pub struct Reply {
     pub status: StatusCode,
     pub content_type: String,
     pub location: Option<String>,
+    pub cache_control: Option<String>,
+    pub etag: Option<String>,
     pub body: String,
 }
 
@@ -68,19 +70,36 @@ pub async fn get(
     catalog: Catalog,
     path: &str,
 ) -> Reply {
+    get_with(catalog, path, &[]).await
+}
+
+/// Like [`get`], with extra request headers.
+pub async fn get_with(
+    catalog: Catalog,
+    path: &str,
+    headers: &[(&str, &str)],
+) -> Reply {
     let router = build_router(AppState::new(catalog, base_url()));
-    let response = router.oneshot(Request::get(path).body(Body::empty()).unwrap()).await.unwrap();
+    let mut request = Request::get(path);
+    for (name, value) in headers {
+        request = request.header(*name, *value);
+    }
+    let response = router.oneshot(request.body(Body::empty()).unwrap()).await.unwrap();
 
     let status = response.status();
     let header = |name: &str| response.headers().get(name).map(|value| value.to_str().unwrap().to_owned());
     let content_type = header("content-type").unwrap_or_default();
     let location = header("location");
+    let cache_control = header("cache-control");
+    let etag = header("etag");
     let body = response.into_body().collect().await.unwrap().to_bytes();
 
     Reply {
         status,
         content_type,
         location,
+        cache_control,
+        etag,
         body: String::from_utf8(body.to_vec()).unwrap(),
     }
 }

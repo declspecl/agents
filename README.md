@@ -14,7 +14,7 @@ Requires Node 24 (`mise install`), pnpm, Docker and Rust.
 ```sh
 pnpm install
 pnpm api:dev                             # http://127.0.0.1:3000
-cp apps/cdk/.env.example apps/cdk/.env   # fill in AWS_ACCOUNT_ID
+cp apps/cdk/.env.example apps/cdk/.env.local   # fill in AWS_ACCOUNT_ID
 pnpm cdk:bootstrap && pnpm cdk:deploy
 ```
 

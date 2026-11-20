@@ -30,13 +30,15 @@ knowledge.
 
 ## Rules
 
-- **Markdown by default.** A document is returned as `text/markdown; charset=utf-8`. JSON is available through the
+- **Markdown, served as plain text.** Documents, listings and 404s are markdown, returned as `text/plain; charset=utf-8`.
+  Not `text/markdown`: browsers download that type as a file instead of showing it. JSON is available through the
   `Accept` header for anything programmatic. _Planned._
 - **Directories end in `/`.** A request for a directory without the slash redirects to the slash form.
 - **Generated, not hand-written, indexes.** `llms.txt`, `llms-full.txt`, `sitemap.xml` and every directory listing are
   built from the content tree, so they cannot drift from it.
-- **Cacheable.** _Planned._ Content only changes on deploy, so responses will carry `ETag` and long-lived
-  `Cache-Control`, and the API will answer conditional requests with 304.
+- **Cacheable.** Content only changes on deploy, so every successful response carries a five-minute `Cache-Control` and a
+  strong `ETag` (a hash of its body). A request whose `If-None-Match` still matches gets a bodyless 304. Failures and
+  `/health` are `no-store`.
 - **Read-only.** Only `GET` and `HEAD`. Anything else is 405.
 - **Unknown paths are 404** with a short markdown body that links back to `/llms.txt`, so a lost agent can recover.
 - **No state.** No database, sessions or cookies. Two requests for the same path return the same bytes until a deploy.

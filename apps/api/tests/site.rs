@@ -96,7 +96,7 @@ async fn serves_a_document_as_markdown_without_its_front_matter() {
     let reply = get(fixture_catalog(), "/preferences/editor.md").await;
 
     assert_eq!(reply.status, StatusCode::OK);
-    assert_eq!(reply.content_type, "text/markdown; charset=utf-8");
+    assert_eq!(reply.content_type, "text/plain; charset=utf-8");
     assert_eq!(reply.body, "# Editor\n\nBody of Editor.\n");
 }
 
@@ -105,7 +105,7 @@ async fn lists_a_directory_with_a_link_to_its_parent() {
     let reply = get(fixture_catalog(), "/preferences/").await;
 
     assert_eq!(reply.status, StatusCode::OK);
-    assert_eq!(reply.content_type, "text/markdown; charset=utf-8");
+    assert_eq!(reply.content_type, "text/plain; charset=utf-8");
     assert_eq!(
         reply.body,
         "\
@@ -165,7 +165,7 @@ async fn unknown_paths_are_not_found_and_point_back_to_the_index() {
         let reply = get(fixture_catalog(), path).await;
 
         assert_eq!(reply.status, StatusCode::NOT_FOUND, "{path}");
-        assert_eq!(reply.content_type, "text/markdown; charset=utf-8", "{path}");
+        assert_eq!(reply.content_type, "text/plain; charset=utf-8", "{path}");
         assert!(reply.body.contains("/llms.txt"), "{path}");
     }
 }

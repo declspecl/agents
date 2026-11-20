@@ -1,5 +1,5 @@
 ---
-status: accepted
+status: superseded by [0006](0006-zip-lambda-built-in-docker.md)
 ---
 
 # The Lambda deploys as a Docker container image

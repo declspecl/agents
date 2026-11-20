@@ -15,7 +15,7 @@ use axum::response::{
 };
 
 use super::response::{
-    MARKDOWN,
+    PLAIN_TEXT,
     render,
     render_with_status,
     respond,
@@ -51,7 +51,7 @@ pub async fn serve_path(
         let document = DocumentPath::parse(&path).ok().and_then(|path| state.catalog.find_document(&path));
 
         return match document {
-            Some(document) => respond(StatusCode::OK, MARKDOWN, document.body.clone()),
+            Some(document) => respond(StatusCode::OK, PLAIN_TEXT, document.body.clone()),
             None => serve_not_found(&url_path),
         };
     }
@@ -68,11 +68,11 @@ fn serve_directory(
     url_path: &str,
 ) -> Response {
     match state.catalog.find_directory(directory) {
-        Some(directory) => render(MARKDOWN, &DirectoryListing::build(&directory)),
+        Some(directory) => render(PLAIN_TEXT, &DirectoryListing::build(&directory)),
         None => serve_not_found(url_path),
     }
 }
 
 fn serve_not_found(url_path: &str) -> Response {
-    render_with_status(StatusCode::NOT_FOUND, MARKDOWN, &NotFound::build(url_path))
+    render_with_status(StatusCode::NOT_FOUND, PLAIN_TEXT, &NotFound::build(url_path))
 }

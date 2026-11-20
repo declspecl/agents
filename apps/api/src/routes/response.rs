@@ -9,7 +9,8 @@ use axum::response::{
     Response,
 };
 
-pub const MARKDOWN: &str = "text/markdown; charset=utf-8";
+/// Documents, listings and 404s are markdown, but they are served as plain text on purpose: browsers download
+/// `text/markdown` as a file instead of showing it, and an agent reads the body either way.
 pub const PLAIN_TEXT: &str = "text/plain; charset=utf-8";
 pub const XML: &str = "application/xml; charset=utf-8";
 
